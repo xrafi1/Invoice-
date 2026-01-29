@@ -1,0 +1,113 @@
+html {
+  font-size: 100%;
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+}
+body {
+  background-color: #f1f1f1;
+}
+p {
+  line-height: 1.5;
+}
+.wordpress-logo {
+  display: block;
+  text-align: center;
+}
+.wordpress-logo span {
+  display: block;
+  text-indent: -9999px;
+}
+.wordpress-logo img {
+  width: 80px;
+}
+.login-wrapper {
+  width: 320px;
+  margin: auto;
+  margin-top: 8%;
+}
+.login-wrapper a {
+  text-decoration: none;
+  color: #555d66;
+  font-size: 13px;
+}
+.login-wrapper a:hover {
+  color: #00a0d2;
+}
+.login-wrapper form {
+  margin-top: 20px;
+  margin-left: 0;
+  padding: 26px 24px 46px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.13);
+  border:1px solid #ccd0d4;
+}
+.login-wrapper .backlink,
+.login-wrapper .lost-password {
+  padding: 0 24px;
+}
+form label {
+  color: #72777c;
+  font-size: 12px;
+  cursor: pointer;
+}
+form p {
+  margin: 0;
+}
+form input {
+  font-size: 24px;
+  width: 100%;
+  padding: 3px;
+  margin: 2px 6px 16px 0;
+  border: 1px solid #7e8993;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07);
+  border-radius:4px;
+	color: #32373c;
+}
+form .form-actions {
+  overflow: hidden;
+}
+form .rememberme {
+  float: left;
+}
+form .submit {
+  float: right;
+}
+input[type="checkbox"] {
+  border: 1px solid #b4b9be;
+  background: #fff;
+  color: #555;
+  clear: none;
+  cursor: pointer;
+  display: inline-block;
+  line-height: 0;
+  height: 16px;
+  margin: -4px 4px 0 0;
+  text-align: center;
+  vertical-align: middle;
+  width: 16px;
+  min-width: 16px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+.btn {
+  display: inline-block;
+  text-decoration: none;
+  font-size: 13px;
+  line-height: 26px;
+  height: 28px;
+  margin: 0;
+  padding: 0 10px 1px;
+  cursor: pointer;
+  border-width: 1px;
+  border-style: solid;
+  -webkit-appearance: none;
+  border-radius: 3px;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+.btn-primary {
+  background: #008ec2;
+  border-color: #007cba;
+  color: #fff;
+  text-decoration: none;
+}
