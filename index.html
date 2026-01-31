@@ -3,56 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VoiceConnect - Realtime Calling</title>
+    <title>VideoChat Pro</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 </head>
 <body>
 
-    <div class="app-container">
-        <header class="app-header">
-            <span class="material-icons logo-icon">graphic_eq</span>
-            <h1>VoiceConnect</h1>
-        </header>
-
-        <main class="control-panel">
+    <div id="lobby-screen" class="screen">
+        <div class="lobby-card">
+            <h2>Start a Video Call</h2>
+            <p class="subtitle">Secure, high-quality video chat.</p>
             
             <div class="input-group">
-                <label>Your Name</label>
-                <input type="text" id="username" placeholder="Enter your name">
+                <input type="text" id="roomId" placeholder="Enter Room ID">
+                <button id="generateBtn" class="icon-btn"><span class="material-icons">refresh</span></button>
             </div>
 
-            <div class="input-group">
-                <label>Room ID</label>
-                <div class="room-input-wrapper">
-                    <input type="text" id="roomId" placeholder="Enter Room ID to join">
-                    <button id="generateRoomBtn" class="icon-btn" title="Generate Random Room ID">
-                        <span class="material-icons">refresh</span>
-                    </button>
-                </div>
-            </div>
-
-            <div class="status-display">
-                <p id="statusText">Ready to connect</p>
-                <div class="indicator" id="statusIndicator"></div>
-            </div>
-
-            <div class="action-buttons">
-                <button id="startCallBtn" class="btn call-btn">
-                    <span class="material-icons">call</span> Start Call
-                </button>
-                <button id="hangupBtn" class="btn hangup-btn" disabled>
-                    <span class="material-icons">call_end</span> End Call
+            <div class="lobby-actions">
+                <button id="startCallBtn" class="btn primary-btn">
+                    <span class="material-icons">videocam</span> Create / Join Call
                 </button>
             </div>
+            
+            <p id="statusText">Ready to connect...</p>
+        </div>
+    </div>
 
-            <audio id="remoteAudio" autoplay></audio>
-        </main>
+    <div id="call-screen" class="screen hidden">
+        
+        <video id="remoteVideo" autoplay playsinline></video>
+
+        <video id="localVideo" autoplay playsinline muted></video>
+
+        <div class="call-controls">
+            <button id="toggleMicBtn" class="control-btn active">
+                <span class="material-icons">mic</span>
+            </button>
+            
+            <button id="hangupBtn" class="control-btn hangup">
+                <span class="material-icons">call_end</span>
+            </button>
+            
+            <button id="toggleCamBtn" class="control-btn active">
+                <span class="material-icons">videocam</span>
+            </button>
+        </div>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-    
     <script src="script.js"></script>
 </body>
 </html>
