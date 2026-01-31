@@ -1,225 +1,160 @@
-// ==========================================
-// 1. FIREBASE CONFIGURATION
-// (Updated with your credentials)
-// ==========================================
+// 1. FIREBASE CONFIG (Use your existing config)
 const firebaseConfig = {
-  apiKey: "AIzaSyBdxnr5PCjDg7dSLaCt1mqf3rdJxtIMmCU",
-  authDomain: "call-fd856.firebaseapp.com",
-  projectId: "call-fd856",
-  storageBucket: "call-fd856.firebasestorage.app",
-  messagingSenderId: "494981504142",
-  appId: "1:494981504142:web:f6cbd4ebfd47c2125bbddf",
-  measurementId: "G-KJWMBPKKYJ"
-};
+    apiKey: "AIzaSyBdxnr5PCjDg7dSLaCt1mqf3rdJxtIMmCU",
+    authDomain: "call-fd856.firebaseapp.com",
+    projectId: "call-fd856",
+    storageBucket: "call-fd856.firebasestorage.app",
+    messagingSenderId: "494981504142",
+    appId: "1:494981504142:web:f6cbd4ebfd47c2125bbddf",
+    measurementId: "G-KJWMBPKKYJ"
+  };
 
-// Initialize Firebase
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 const firestore = firebase.firestore();
 
-// ==========================================
-// 2. WEBRTC CONFIGURATION
-// ==========================================
+// 2. WEBRTC CONFIG
 const servers = {
     iceServers: [
-        {
-            urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302']
-        }
+        { urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }
     ]
 };
 
 // Global State
-let pc = null; // Peer Connection
+let pc = null;
 let localStream = null;
 let remoteStream = null;
 let roomId = null;
-let unsubscribe = null; // Firestore listener unsubscription
+let unsubscribe = null;
 
-// HTML Elements
-const usernameInput = document.getElementById('username');
+// DOM Elements
+const lobbyScreen = document.getElementById('lobby-screen');
+const callScreen = document.getElementById('call-screen');
 const roomIdInput = document.getElementById('roomId');
-const startCallBtn = document.getElementById('startCallBtn');
-const hangupBtn = document.getElementById('hangupBtn');
-const generateRoomBtn = document.getElementById('generateRoomBtn');
 const statusText = document.getElementById('statusText');
-const statusIndicator = document.getElementById('statusIndicator');
-const remoteAudio = document.getElementById('remoteAudio');
+const localVideo = document.getElementById('localVideo');
+const remoteVideo = document.getElementById('remoteVideo');
 
-// ==========================================
-// 3. EVENT LISTENERS
-// ==========================================
-
-startCallBtn.addEventListener('click', startCall);
-hangupBtn.addEventListener('click', hangUp);
-generateRoomBtn.addEventListener('click', () => {
-    // Generate a random 6-character room ID
+// Buttons
+document.getElementById('generateBtn').onclick = () => {
     roomIdInput.value = Math.random().toString(36).substring(2, 8);
-});
+};
+document.getElementById('startCallBtn').onclick = startCall;
+document.getElementById('hangupBtn').onclick = hangUp;
 
-// ==========================================
-// 4. CORE FUNCTIONS
-// ==========================================
+// Media Toggles
+document.getElementById('toggleMicBtn').onclick = (e) => toggleTrack('audio', e.currentTarget);
+document.getElementById('toggleCamBtn').onclick = (e) => toggleTrack('video', e.currentTarget);
+
+// --- MAIN LOGIC ---
 
 async function startCall() {
     roomId = roomIdInput.value.trim();
-    if (!roomId) {
-        alert("Please enter a Room ID or generate one.");
-        return;
-    }
+    if (!roomId) return alert("Please enter a Room ID");
 
-    startCallBtn.disabled = true;
-    hangupBtn.disabled = false;
-    roomIdInput.disabled = true;
-    updateStatus("Initializing media...", "calling");
-
-    // 1. Get Local Media (Microphone)
-    try {
-        localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    } catch (error) {
-        console.error("Error accessing microphone:", error);
-        alert("Microphone access is required.");
-        hangUp();
-        return;
-    }
+    statusText.innerText = "Accessing camera...";
     
-    // 2. Create Peer Connection
+    // 1. Get Video & Audio
+    try {
+        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        localVideo.srcObject = localStream;
+    } catch (err) {
+        console.error(err);
+        return alert("Camera/Mic access denied!");
+    }
+
+    // Switch Screens
+    lobbyScreen.classList.add('hidden');
+    callScreen.classList.remove('hidden');
+
+    // 2. Setup Peer Connection
     pc = new RTCPeerConnection(servers);
 
-    // 3. Push local tracks to Peer Connection
-    localStream.getTracks().forEach(track => {
-        pc.addTrack(track, localStream);
-    });
+    // Push local tracks
+    localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
 
-    // 4. Handle Remote Stream
+    // Handle Remote Stream
     pc.ontrack = (event) => {
-        console.log("Remote stream received");
-        // Assign remote stream to hidden audio element
-        if (remoteAudio.srcObject !== event.streams[0]) {
-            remoteAudio.srcObject = event.streams[0];
-        }
-        updateStatus("Connected", "connected");
+        event.streams[0].getTracks().forEach(track => {
+            remoteStream = event.streams[0];
+            remoteVideo.srcObject = remoteStream;
+        });
     };
 
-    // 5. Handle ICE Candidates
+    // 3. Firestore Logic (Same as before, simplified)
     const callDoc = firestore.collection('calls').doc(roomId);
     const offerCandidates = callDoc.collection('offerCandidates');
     const answerCandidates = callDoc.collection('answerCandidates');
 
-    // 6. Check if room exists to decide: Create Offer vs Answer
     const docSnapshot = await callDoc.get();
 
     if (docSnapshot.exists) {
-        // --- JOINING EXISTING CALL (User B) ---
-        console.log("Joining existing room...");
-        updateStatus("Joining call...", "calling");
-
+        // JOINING
         pc.onicecandidate = (event) => {
-            if (event.candidate) {
-                answerCandidates.add(event.candidate.toJSON());
-            }
+            if(event.candidate) answerCandidates.add(event.candidate.toJSON());
         };
 
-        const offerDescription = docSnapshot.data().offer;
-        await pc.setRemoteDescription(new RTCSessionDescription(offerDescription));
+        await pc.setRemoteDescription(new RTCSessionDescription(docSnapshot.data().offer));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        
+        await callDoc.update({ answer: { sdp: answer.sdp, type: answer.type } });
 
-        const answerDescription = await pc.createAnswer();
-        await pc.setLocalDescription(answerDescription);
-
-        const answer = {
-            type: answerDescription.type,
-            sdp: answerDescription.sdp,
-        };
-
-        await callDoc.update({ answer });
-
-        // Listen for remote ICE candidates (Caller's candidates)
-        offerCandidates.onSnapshot(snapshot => {
-            snapshot.docChanges().forEach(change => {
-                if (change.type === 'added') {
-                    const candidate = new RTCIceCandidate(change.doc.data());
-                    pc.addIceCandidate(candidate).catch(e => console.error(e));
-                }
+        offerCandidates.onSnapshot(snap => {
+            snap.docChanges().forEach(change => {
+                if(change.type === 'added') pc.addIceCandidate(new RTCIceCandidate(change.doc.data()));
             });
         });
 
     } else {
-        // --- CREATING NEW CALL (User A) ---
-        console.log("Creating new room...");
-        updateStatus("Waiting for other user...", "calling");
-
+        // HOSTING
         pc.onicecandidate = (event) => {
-            if (event.candidate) {
-                offerCandidates.add(event.candidate.toJSON());
-            }
+            if(event.candidate) offerCandidates.add(event.candidate.toJSON());
         };
 
-        const offerDescription = await pc.createOffer();
-        await pc.setLocalDescription(offerDescription);
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
 
-        const offer = {
-            sdp: offerDescription.sdp,
-            type: offerDescription.type,
-        };
+        await callDoc.set({ offer: { sdp: offer.sdp, type: offer.type } });
 
-        await callDoc.set({ offer });
-
-        // Listen for Answer
-        unsubscribe = callDoc.onSnapshot(snapshot => {
-            const data = snapshot.data();
-            if (!pc.currentRemoteDescription && data?.answer) {
-                const answerDescription = new RTCSessionDescription(data.answer);
-                pc.setRemoteDescription(answerDescription);
+        callDoc.onSnapshot(snap => {
+            const data = snap.data();
+            if(!pc.currentRemoteDescription && data?.answer) {
+                pc.setRemoteDescription(new RTCSessionDescription(data.answer));
             }
         });
 
-        // Listen for remote ICE candidates (Callee's candidates)
-        answerCandidates.onSnapshot(snapshot => {
-            snapshot.docChanges().forEach(change => {
-                if (change.type === 'added') {
-                    const candidate = new RTCIceCandidate(change.doc.data());
-                    pc.addIceCandidate(candidate).catch(e => console.error(e));
-                }
+        answerCandidates.onSnapshot(snap => {
+            snap.docChanges().forEach(change => {
+                if(change.type === 'added') pc.addIceCandidate(new RTCIceCandidate(change.doc.data()));
             });
         });
     }
 
-    // Handle Connection State Changes
+    // Safety cleanup on disconnect
     pc.onconnectionstatechange = () => {
-        if (pc.connectionState === 'disconnected') {
-            hangUp();
-        }
+        if(pc.connectionState === 'disconnected') hangUp();
     };
 }
 
 function hangUp() {
-    // 1. Stop Local Stream
-    if (localStream) {
-        localStream.getTracks().forEach(track => track.stop());
-    }
-
-    // 2. Close Peer Connection
-    if (pc) {
-        pc.close();
-    }
-
-    // 3. Clean UI
-    roomIdInput.value = "";
-    roomIdInput.disabled = false;
-    startCallBtn.disabled = false;
-    hangupBtn.disabled = true;
-    updateStatus("Call ended", "ended");
-
-    // 4. Stop Listening to Firestore
-    if (unsubscribe) {
-        unsubscribe();
-    }
-
-    // Refresh to clear old connection data
-    setTimeout(() => window.location.reload(), 1000);
+    if(localStream) localStream.getTracks().forEach(track => track.stop());
+    if(pc) pc.close();
+    
+    // Simple UI Reset
+    window.location.reload();
 }
 
-function updateStatus(text, className) {
-    statusText.innerText = text;
-    statusIndicator.className = 'indicator ' + className;
+function toggleTrack(kind, btnElement) {
+    const track = localStream.getTracks().find(t => t.kind === kind);
+    if(track) {
+        track.enabled = !track.enabled;
+        // Update Button UI
+        if(track.enabled) {
+            btnElement.classList.remove('inactive');
+            btnElement.classList.add('active');
+        } else {
+            btnElement.classList.remove('active');
+            btnElement.classList.add('inactive');
+        }
+    }
 }
