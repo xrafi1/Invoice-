@@ -1,161 +1,162 @@
 :root {
-    --primary: #6200ea;
-    --primary-dark: #3700b3;
-    --success: #00c853;
-    --danger: #d50000;
-    --bg-color: #f3f4f6;
-    --surface: #ffffff;
-    --text-primary: #1f2937;
-    --text-secondary: #6b7280;
+    --bg-dark: #121212;
+    --card-bg: #1e1e1e;
+    --primary: #3b82f6;
+    --danger: #ef4444;
+    --text: #ffffff;
 }
 
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
 
 body {
-    background-color: var(--bg-color);
+    background-color: var(--bg-dark);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden; /* Prevent scrolling during call */
+}
+
+/* --- UTILS --- */
+.hidden { display: none !important; }
+
+/* --- LOBBY SCREEN --- */
+#lobby-screen {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
-    padding: 20px;
+    height: 100vh;
+    background: radial-gradient(circle at center, #2a2a2a 0%, #000 100%);
 }
 
-.app-container {
-    background: var(--surface);
-    width: 100%;
+.lobby-card {
+    background: var(--card-bg);
+    padding: 2rem;
+    border-radius: 20px;
+    width: 90%;
     max-width: 400px;
-    border-radius: 16px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-    overflow: hidden;
-}
-
-.app-header {
-    background: var(--primary);
-    color: white;
-    padding: 20px;
     text-align: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    border: 1px solid #333;
 }
 
-.logo-icon {
-    font-size: 28px;
-}
-
-.control-panel {
-    padding: 25px;
-}
+.lobby-card h2 { margin-bottom: 5px; }
+.subtitle { color: #aaa; margin-bottom: 20px; font-size: 0.9rem; }
 
 .input-group {
+    display: flex;
+    gap: 10px;
     margin-bottom: 20px;
 }
 
-.input-group label {
-    display: block;
-    margin-bottom: 8px;
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-    font-weight: 600;
-}
-
-.room-input-wrapper {
-    display: flex;
-    gap: 10px;
-}
-
-input[type="text"] {
-    width: 100%;
+input {
+    flex: 1;
     padding: 12px;
-    border: 2px solid #e5e7eb;
     border-radius: 8px;
-    font-size: 16px;
+    border: 1px solid #444;
+    background: #2c2c2c;
+    color: white;
     outline: none;
-    transition: border-color 0.2s;
-}
-
-input[type="text"]:focus {
-    border-color: var(--primary);
 }
 
 .icon-btn {
-    background: #e5e7eb;
+    background: #333;
     border: none;
-    border-radius: 8px;
-    padding: 0 12px;
-    cursor: pointer;
-    color: var(--text-secondary);
-}
-
-.status-display {
-    text-align: center;
-    margin-bottom: 30px;
-    padding: 10px;
-    background: #f9fafb;
-    border-radius: 8px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 5px;
-}
-
-#statusText {
-    color: var(--text-primary);
-    font-weight: 500;
-}
-
-.indicator {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background-color: #ccc;
-    transition: background-color 0.3s;
-}
-
-.indicator.calling { background-color: #ffca28; }
-.indicator.connected { background-color: var(--success); box-shadow: 0 0 10px var(--success); }
-.indicator.ended { background-color: var(--danger); }
-
-.action-buttons {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-}
-
-.btn {
-    padding: 15px;
-    border: none;
-    border-radius: 12px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
     color: white;
-    transition: transform 0.1s, opacity 0.2s;
+    padding: 0 12px;
+    border-radius: 8px;
+    cursor: pointer;
 }
 
-.btn:active {
-    transform: scale(0.98);
+.primary-btn {
+    width: 100%;
+    padding: 12px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    transition: background 0.2s;
+}
+.primary-btn:hover { background: #2563eb; }
+
+/* --- CALL SCREEN --- */
+#call-screen {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    background: black;
 }
 
-.btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+/* Remote Video (Full Screen) */
+#remoteVideo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Ensures video fills screen */
 }
 
-.call-btn {
-    background-color: var(--success);
+/* Local Video (Floating) */
+#localVideo {
+    position: absolute;
+    bottom: 100px; /* Above controls */
+    right: 20px;
+    width: 120px;
+    height: 180px;
+    background: #333;
+    border-radius: 12px;
+    object-fit: cover;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    border: 2px solid rgba(255,255,255,0.2);
+    transform: scaleX(-1); /* Mirror effect */
 }
 
-.hangup-btn {
-    background-color: var(--danger);
+/* Controls Bar */
+.call-controls {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 15px;
+    background: rgba(40, 40, 40, 0.8);
+    padding: 10px 20px;
+    border-radius: 30px;
+    backdrop-filter: blur(10px);
+}
+
+.control-btn {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    color: white;
+    background: #444;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: 0.2s;
+}
+
+.control-btn.active { background: #444; }
+.control-btn.inactive { background: var(--danger); position: relative; }
+/* Strikethrough for inactive */
+.control-btn.inactive::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 2px;
+    background: white;
+    transform: rotate(45deg);
+}
+
+.control-btn.hangup { background: var(--danger); width: 60px; height: 60px; font-size: 1.2rem; }
+.control-btn:hover { filter: brightness(1.2); }
+
+/* Mobile Adjustments */
+@media (max-width: 600px) {
+    #localVideo { width: 90px; height: 135px; bottom: 90px; }
 }
